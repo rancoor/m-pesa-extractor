@@ -62,7 +62,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     let lineNum = 1; // LINENUMBER column
 
-    for (let i = 8; i < data.length; i++) { // start after header rows
+    for (let i = 7; i < data.length; i++) { // start after header rows
       const row = data[i];
       if (!row?.[0]) continue; // skip empty rows
 
