@@ -28,22 +28,14 @@ const parseAmount = (val) => {
   return isNegative ? -num : num;
 };
 
-// --- Format date yyyy-mm-dd hh:mm:ss with day and month swapped for D365 FO ---
+// --- Format date with swapped day/month for D365 ---
 const formatDate = (val) => {
   if (!val) return "";
   const d = new Date(val);
   if (isNaN(d)) return String(val);
 
-  // Swap month and day
-  const day = String(d.getMonth() + 1).padStart(2, '0'); // use month as day
-  const month = String(d.getDate()).padStart(2, '0');    // use day as month
-  const year = d.getFullYear();
-
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  // Swap day and month for export
+  return `${d.getFullYear()}-${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
 };
 
 app.post("/upload", upload.single("file"), async (req, res) => {
@@ -58,9 +50,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     const statementID = 1;
     const openingBalance = 0;
 
-    const fromDate = data[3]?.[2] ? formatDate(data[3][2]) : "";
-    const toDate = data[3]?.[4] ? formatDate(data[3][4]) : "";
-
     // --- Generate Lines sheet ---
     const linesSheetData = [
       ["LINENUMBER","BANKACCOUNT","STATEMENTID","BOOKINGDATE","AMOUNT",
@@ -71,6 +60,8 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     ];
 
     let lineNum = 1; // LINENUMBER column
+    let minBookingDate = null;
+    let maxBookingDate = null;
 
     for (let i = 7; i < data.length; i++) { // start after header rows
       const row = data[i];
@@ -79,7 +70,15 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       const docNum = String(row[0]).toLowerCase();
       if (docNum.includes("total") || docNum.includes("summary")) continue; // skip totals
 
-      const bookingDate = formatDate(row[1]);
+      const bookingDateRaw = row[1];
+      const bookingDateObj = new Date(bookingDateRaw);
+
+      if (!isNaN(bookingDateObj)) {
+        if (!minBookingDate || bookingDateObj < minBookingDate) minBookingDate = bookingDateObj;
+        if (!maxBookingDate || bookingDateObj > maxBookingDate) maxBookingDate = bookingDateObj;
+      }
+
+      const bookingDate = formatDate(bookingDateRaw);
 
       // Paid In row
       const paidInVal = parseAmount(row[5]);
@@ -126,6 +125,20 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     let endingBalance = 0;
     for (let i = 1; i < linesSheetData.length; i++) {
       endingBalance += linesSheetData[i][4]; // column 5 = AMOUNT
+    }
+
+    // --- Use actual min/max dates for header, offset by 1 sec ---
+    let fromDate = "";
+    let toDate = "";
+    if (minBookingDate && maxBookingDate) {
+      const from = new Date(minBookingDate);
+      from.setSeconds(from.getSeconds() - 1);
+
+      const to = new Date(maxBookingDate);
+      to.setSeconds(to.getSeconds() + 1);
+
+      fromDate = formatDate(from);
+      toDate = formatDate(to);
     }
 
     // --- Create Header workbook ---
