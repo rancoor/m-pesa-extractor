@@ -48,9 +48,27 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     const statementID = 1;
     const openingBalance = 0;
 
-    const fromDate = data[3]?.[2] ? formatDate(data[3][2]) : "";
-    const toDate = data[3]?.[4] ? formatDate(data[3][4]) : "";
+    // --- Extract from/to dates from row 4 ---
+    let fromDateRaw = "";
+    let toDateRaw = "";
+    const row4 = XLSX.utils.sheet_to_json(ws, { header: 1, range: 3, raw: false })[0] || [];
+    console.log("Row 4 contents:", row4);
 
+    for (let j = 0; j < row4.length; j++) {
+      if (String(row4[j]).toLowerCase() === "from" && row4[j + 1]) {
+        fromDateRaw = row4[j + 1];
+      }
+      if (String(row4[j]).toLowerCase() === "to" && row4[j + 1]) {
+        toDateRaw = row4[j + 1];
+      }
+    }
+
+    const fromDate = formatDate(fromDateRaw);
+    const toDate = formatDate(toDateRaw);
+    console.log("Extracted From Date:", fromDate);
+    console.log("Extracted To Date:", toDate);
+
+  
     // --- Generate Lines sheet ---
     const linesSheetData = [
       ["LINENUMBER","BANKACCOUNT","STATEMENTID","BOOKINGDATE","AMOUNT",
@@ -140,11 +158,11 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     fs.unlinkSync(inputFile);
 
     res.json({ files: [`/${path.basename(headerFile)}`, `/${path.basename(linesFile)}`] });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
 
 app.listen(8100, () => console.log("Server running on port 8100"));
