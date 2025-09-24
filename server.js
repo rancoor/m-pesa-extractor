@@ -140,11 +140,11 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     fs.unlinkSync(inputFile);
 
     res.json({ files: [`/${path.basename(headerFile)}`, `/${path.basename(linesFile)}`] });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 app.listen(8100, () => console.log("Server running on port 8100"));
