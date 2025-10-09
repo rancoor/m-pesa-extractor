@@ -137,3 +137,10 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# M-Pesa Extractor specific
+# Generated Excel files
+public/*.xlsx
+# Uploaded files
+uploads/*
+!uploads/.gitkeep

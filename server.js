@@ -9,6 +9,127 @@ const upload = multer({ dest: "uploads/" });
 
 app.use(express.static("public"));
 
+// --- Configuration for date validation behavior ---
+const CONFIG = {
+  // Set to true to enforce that statement date ranges must be in current month
+  ENFORCE_CURRENT_MONTH_FOR_STATEMENT_RANGE: false,
+  
+  // Set to true to enforce that individual transaction dates must be in current month
+  ENFORCE_CURRENT_MONTH_FOR_TRANSACTIONS: true,
+  
+  // Log warnings when dates don't match current month (regardless of enforcement)
+  LOG_MONTH_MISMATCH_WARNINGS: true,
+  
+  // Assume dd/mm/yyyy format for ambiguous dates (true) or mm/dd/yyyy (false)
+  ASSUME_DAY_MONTH_FORMAT: true // Set to true for M-Pesa Kenya format (dd/mm/yyyy)
+};
+
+// --- Date validation helper function ---
+const isDateInCurrentMonth = (date, strictMode = false) => {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+  
+  if (strictMode) {
+    // Strict mode: date must be in current month and year
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+  } else {
+    // Lenient mode: allow current month of current or previous year
+    return date.getMonth() === currentMonth && 
+           (date.getFullYear() === currentYear || date.getFullYear() === currentYear - 1);
+  }
+};
+
+// --- Enhanced date parser with M-Pesa specific logic ---
+const parseStatementDate = (dateStr, contextInfo = {}) => {
+  if (!dateStr) return null;
+  
+  const str = String(dateStr).trim();
+  const currentMonth = new Date().getMonth() + 1;
+  const currentYear = new Date().getFullYear();
+  
+  // Excel serial date handling
+  if (!isNaN(str) && str.length <= 5) {
+    const excelEpoch = new Date(1900, 0, 1);
+    const days = parseInt(str) - 2;
+    return new Date(excelEpoch.getTime() + (days * 24 * 60 * 60 * 1000));
+  }
+  
+  // Common M-Pesa date patterns
+  const datePatterns = [
+    // dd/mm/yyyy format (most common in M-Pesa Kenya) or mm/dd/yyyy
+    {
+      regex: /^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/,
+      parser: (match) => {
+        const first = parseInt(match[1]);
+        const second = parseInt(match[2]);
+        const year = parseInt(match[3]);
+        const hour = match[4] ? parseInt(match[4]) : 0;
+        const minute = match[5] ? parseInt(match[5]) : 0;
+        const second_time = match[6] ? parseInt(match[6]) : 0;
+        
+        let day, month;
+        
+        // Determine format based on configuration and logic
+        if (CONFIG.ASSUME_DAY_MONTH_FORMAT) {
+          // dd/mm/yyyy format (M-Pesa Kenya)
+          day = first;
+          month = second;
+        } else {
+          // mm/dd/yyyy format (US style)
+          day = second;
+          month = first;
+        }
+        
+        // Validation and smart detection
+        if (first > 12 && second <= 12) {
+          // First number > 12, must be day (dd/mm/yyyy)
+          day = first;
+          month = second;
+        } else if (second > 12 && first <= 12) {
+          // Second number > 12, must be day (mm/dd/yyyy)
+          day = second;
+          month = first;
+        }
+        
+        // Final validation
+        if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1900) {
+          return new Date(year, month - 1, day, hour, minute, second_time);
+        }
+        return null;
+      }
+    },
+    // yyyy-mm-dd format
+    {
+      regex: /^(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/,
+      parser: (match) => {
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]);
+        const day = parseInt(match[3]);
+        const hour = match[4] ? parseInt(match[4]) : 0;
+        const minute = match[5] ? parseInt(match[5]) : 0;
+        const second = match[6] ? parseInt(match[6]) : 0;
+        
+        return new Date(year, month - 1, day, hour, minute, second);
+      }
+    }
+  ];
+  
+  for (let pattern of datePatterns) {
+    const match = str.match(pattern.regex);
+    if (match) {
+      const date = pattern.parser(match);
+      if (date && !isNaN(date)) {
+        return date;
+      }
+    }
+  }
+  
+  // Fallback to native parsing
+  const fallbackDate = new Date(str);
+  return isNaN(fallbackDate) ? null : fallbackDate;
+};
+
 // --- Robust amount parser ---
 const parseAmount = (val) => {
   if (val === undefined || val === null) return 0;
@@ -28,12 +149,40 @@ const parseAmount = (val) => {
   return isNegative ? -num : num;
 };
 
-// --- Format date yyyy-mm-dd hh:mm:ss ---
-const formatDate = (val) => {
+// --- Format date yyyy-mm-dd hh:mm:ss with enhanced parsing ---
+const formatDate = (val, enforceCurrentMonth = false) => {
   if (!val) return "";
-  const d = new Date(val);
-  if (isNaN(d)) return String(val);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  
+  // Use the enhanced parser
+  const parsedDate = parseStatementDate(val);
+  
+  if (!parsedDate) {
+    if (CONFIG.LOG_MONTH_MISMATCH_WARNINGS) {
+      console.warn(`Unable to parse date: ${val}`);
+    }
+    return String(val);
+  }
+  
+  // Optional: enforce current month validation
+  if (enforceCurrentMonth) {
+    const currentMonth = new Date().getMonth();
+    if (parsedDate.getMonth() !== currentMonth) {
+      if (CONFIG.LOG_MONTH_MISMATCH_WARNINGS) {
+        console.warn(`Date month ${parsedDate.getMonth() + 1} doesn't match current month ${currentMonth + 1} for date: ${val}`);
+      }
+      // You can choose different behaviors here:
+      // 1. Return the original value (strict validation fails)
+      // 2. Adjust to current month: parsedDate.setMonth(currentMonth);
+      // 3. Just log warning and proceed (current behavior)
+      
+      // For now, we'll proceed with the parsed date but log the warning
+      // Uncomment the next line if you want strict rejection:
+      // return String(val);
+    }
+  }
+  
+  // Format as yyyy-mm-dd hh:mm:ss
+  return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth()+1).padStart(2,'0')}-${String(parsedDate.getDate()).padStart(2,'0')} ${String(parsedDate.getHours()).padStart(2,'0')}:${String(parsedDate.getMinutes()).padStart(2,'0')}:${String(parsedDate.getSeconds()).padStart(2,'0')}`;
 };
 
 app.post("/upload", upload.single("file"), async (req, res) => {
@@ -63,8 +212,9 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       }
     }
 
-    const fromDate = formatDate(fromDateRaw);
-    const toDate = formatDate(toDateRaw);
+    // Use configuration for statement date range validation
+    const fromDate = formatDate(fromDateRaw, CONFIG.ENFORCE_CURRENT_MONTH_FOR_STATEMENT_RANGE);
+    const toDate = formatDate(toDateRaw, CONFIG.ENFORCE_CURRENT_MONTH_FOR_STATEMENT_RANGE);
     console.log("Extracted From Date:", fromDate);
     console.log("Extracted To Date:", toDate);
 
@@ -87,7 +237,8 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       const docNum = String(row[0]).toLowerCase();
       if (docNum.includes("total") || docNum.includes("summary")) continue; // skip totals
 
-      const bookingDate = formatDate(row[1]);
+      // Use configuration for transaction date validation
+      const bookingDate = formatDate(row[1], CONFIG.ENFORCE_CURRENT_MONTH_FOR_TRANSACTIONS);
 
       // Paid In row
       const paidInVal = parseAmount(row[5]);
