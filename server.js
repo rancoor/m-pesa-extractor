@@ -5,17 +5,17 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() }); // ✅ in-memory, not disk
+const upload = multer({ storage: multer.memoryStorage() }); // In-memory upload
 
 app.use(express.static("public"));
 
 // --- Robust amount parser ---
 const parseAmount = (val) => {
   if (val === undefined || val === null) return 0;
-  let str = String(val).replace(/\s/g, '').replace(/,/g,'');
+  let str = String(val).replace(/\s/g, "").replace(/,/g, "");
   if (!str) return 0;
   let isNegative = false;
-  if (str.startsWith('(') && str.endsWith(')')) {
+  if (str.startsWith("(") && str.endsWith(")")) {
     isNegative = true;
     str = str.slice(1, -1);
   }
@@ -29,14 +29,17 @@ const formatDate = (val) => {
   if (!val) return "";
   const d = new Date(val);
   if (isNaN(d)) return String(val);
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate()
+  ).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(
+    d.getMinutes()
+  ).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 };
 
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-    // ✅ Read workbook from memory buffer
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const ws = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
@@ -50,12 +53,8 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     const row4 = XLSX.utils.sheet_to_json(ws, { header: 1, range: 3, raw: false })[0] || [];
 
     for (let j = 0; j < row4.length; j++) {
-      if (String(row4[j]).toLowerCase() === "from" && row4[j + 1]) {
-        fromDateRaw = row4[j + 1];
-      }
-      if (String(row4[j]).toLowerCase() === "to" && row4[j + 1]) {
-        toDateRaw = row4[j + 1];
-      }
+      if (String(row4[j]).toLowerCase() === "from" && row4[j + 1]) fromDateRaw = row4[j + 1];
+      if (String(row4[j]).toLowerCase() === "to" && row4[j + 1]) toDateRaw = row4[j + 1];
     }
 
     const fromDate = formatDate(fromDateRaw);
@@ -63,11 +62,13 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     // --- Generate Lines sheet ---
     const linesSheetData = [
-      ["LINENUMBER","BANKACCOUNT","STATEMENTID","BOOKINGDATE","AMOUNT",
-       "BANKSTATEMENTTRANSACTIONCODE","COUNTERAMOUNT","COUNTERCURRENCY","COUNTEREXCHANGERATE",
-       "CREDITORREFERENCEINFORMATION","DOCUMENTNUMBER","ENTRYREFERENCE","INSTRUCTEDAMOUNT",
-       "INSTRUCTEDCURRENCY","INSTRUCTEDEXCHANGERATE","LINESTATUS","REFERENCENUMBER",
-       "RELATEDBANK","RELATEDBANKACCOUNT","REVERSAL","TRADINGPARTY"]
+      [
+        "LINENUMBER", "BANKACCOUNT", "STATEMENTID", "BOOKINGDATE", "AMOUNT",
+        "BANKSTATEMENTTRANSACTIONCODE", "COUNTERAMOUNT", "COUNTERCURRENCY", "COUNTEREXCHANGERATE",
+        "CREDITORREFERENCEINFORMATION", "DOCUMENTNUMBER", "ENTRYREFERENCE", "INSTRUCTEDAMOUNT",
+        "INSTRUCTEDCURRENCY", "INSTRUCTEDEXCHANGERATE", "LINESTATUS", "REFERENCENUMBER",
+        "RELATEDBANK", "RELATEDBANKACCOUNT", "REVERSAL", "TRADINGPARTY"
+      ]
     ];
 
     let lineNum = 1;
@@ -85,14 +86,14 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
       if (paidInVal !== 0) {
         linesSheetData.push([
-          lineNum++,"MPESA",statementID,bookingDate,parseFloat(paidInVal.toFixed(3)),
-          "",0,"",0,"",row[0],"",0,"",0,"Booked",row[0],"","","No",""
+          lineNum++, "MPESA", statementID, bookingDate, parseFloat(paidInVal.toFixed(3)),
+          "", 0, "", 0, "", row[0], "", 0, "", 0, "Booked", row[0], "", "", "No", ""
         ]);
       }
       if (withdrawnVal !== 0) {
         linesSheetData.push([
-          lineNum++,"MPESA",statementID,bookingDate,parseFloat((-Math.abs(withdrawnVal)).toFixed(3)),
-          "",0,"",0,"",row[0],"",0,"",0,"Booked",row[0],"","","No",""
+          lineNum++, "MPESA", statementID, bookingDate, parseFloat((-Math.abs(withdrawnVal)).toFixed(3)),
+          "", 0, "", 0, "", row[0], "", 0, "", 0, "Booked", row[0], "", "", "No", ""
         ]);
       }
     }
@@ -116,22 +117,20 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     // --- Create Header workbook ---
     const headerWB = XLSX.utils.book_new();
     const headerWS = XLSX.utils.aoa_to_sheet([
-      ["STATEMENTID","BANKACCOUNT","CURRENCY","ENDINGBALANCE","FROMDATE","OPENINGBALANCE","TODATE"],
-      [statementID,"MPESA","KES",parseFloat(endingBalance.toFixed(3)),fromDate,openingBalance,toDate]
+      ["STATEMENTID", "BANKACCOUNT", "CURRENCY", "ENDINGBALANCE", "FROMDATE", "OPENINGBALANCE", "TODATE"],
+      [statementID, "MPESA", "KES", parseFloat(endingBalance.toFixed(3)), fromDate, openingBalance, toDate]
     ]);
     XLSX.utils.book_append_sheet(headerWB, headerWS, "Bank_statement_header");
 
     const headerFile = `/tmp/${dateStr}-M-Pesa-Header-${ts}.xlsx`;
     XLSX.writeFile(headerWB, headerFile);
 
-    // ✅ Respond with temporary download links
     res.json({
       files: [
-        { name: path.basename(headerFile), url: `/download?file=${encodeURIComponent(headerFile)}` },
-        { name: path.basename(linesFile), url: `/download?file=${encodeURIComponent(linesFile)}` }
+        { name: path.basename(headerFile), url: `/api/download?file=${encodeURIComponent(headerFile)}` },
+        { name: path.basename(linesFile), url: `/api/download?file=${encodeURIComponent(linesFile)}` }
       ]
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
@@ -139,7 +138,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 });
 
 // Temporary download route
-app.get("/download", (req, res) => {
+app.get("/api/download", (req, res) => {
   const filePath = req.query.file;
   if (!filePath || !fs.existsSync(filePath)) {
     return res.status(404).send("File not found");
@@ -147,4 +146,5 @@ app.get("/download", (req, res) => {
   res.download(filePath);
 });
 
-app.listen(8100, () => console.log("Server running on port 8100"));
+// ✅ Export for Vercel
+module.exports = app;
