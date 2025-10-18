@@ -3,19 +3,16 @@ const multer = require("multer");
 const XLSX = require("xlsx");
 const path = require("path");
 const fs = require("fs");
+const archiver = require("archiver");
+const stream = require("stream");
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() }); // In-memory upload
+const upload = multer({ storage: multer.memoryStorage() });
 
-// ✅ Serve static files (index.html, CSS, JS, etc.)
-const publicPath = path.join(__dirname, "public");
-app.use(express.static(publicPath));
+// --- Serve static files from /public ---
+app.use(express.static(path.join(__dirname, "public")));
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(publicPath, "index.html"));
-});
-
-// --- Robust amount parser ---
+// --- Helper functions ---
 const parseAmount = (val) => {
   if (val === undefined || val === null) return 0;
   let str = String(val).replace(/\s/g, "").replace(/,/g, "");
@@ -30,7 +27,6 @@ const parseAmount = (val) => {
   return isNegative ? -num : num;
 };
 
-// --- Format date yyyy-mm-dd hh:mm:ss ---
 const formatDate = (val) => {
   if (!val) return "";
   const d = new Date(val);
@@ -42,7 +38,7 @@ const formatDate = (val) => {
   ).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 };
 
-// --- Upload & Process Excel ---
+// --- Upload & process Excel in memory ---
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -79,7 +75,6 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     ];
 
     let lineNum = 1;
-
     for (let i = 7; i < data.length; i++) {
       const row = data[i];
       if (!row?.[0]) continue;
@@ -105,53 +100,56 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       }
     }
 
-    // --- Create Lines workbook ---
+    // --- Create Lines workbook in memory ---
     const linesWB = XLSX.utils.book_new();
     const linesWS = XLSX.utils.aoa_to_sheet(linesSheetData);
     XLSX.utils.book_append_sheet(linesWB, linesWS, "Bank_statement_lines");
+    const linesBuffer = XLSX.write(linesWB, { type: "buffer", bookType: "xlsx" });
 
-    const dateStr = new Date().toISOString().split("T")[0];
-    const ts = Date.now();
-    const linesFile = `/tmp/${dateStr}-M-Pesa-Lines-${ts}.xlsx`;
-    XLSX.writeFile(linesWB, linesFile);
-
-    // --- Calculate Ending Balance ---
+    // --- Calculate ending balance ---
     let endingBalance = 0;
     for (let i = 1; i < linesSheetData.length; i++) {
       endingBalance += linesSheetData[i][4];
     }
 
-    // --- Create Header workbook ---
+    // --- Create Header workbook in memory ---
     const headerWB = XLSX.utils.book_new();
     const headerWS = XLSX.utils.aoa_to_sheet([
       ["STATEMENTID", "BANKACCOUNT", "CURRENCY", "ENDINGBALANCE", "FROMDATE", "OPENINGBALANCE", "TODATE"],
       [statementID, "MPESA", "KES", parseFloat(endingBalance.toFixed(3)), fromDate, openingBalance, toDate]
     ]);
     XLSX.utils.book_append_sheet(headerWB, headerWS, "Bank_statement_header");
+    const headerBuffer = XLSX.write(headerWB, { type: "buffer", bookType: "xlsx" });
 
-    const headerFile = `/tmp/${dateStr}-M-Pesa-Header-${ts}.xlsx`;
-    XLSX.writeFile(headerWB, headerFile);
+    // --- Bundle both into a ZIP ---
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    const zipStream = new stream.PassThrough();
 
-    res.json({
-      files: [
-        { name: path.basename(headerFile), url: `/api/download?file=${encodeURIComponent(headerFile)}` },
-        { name: path.basename(linesFile), url: `/api/download?file=${encodeURIComponent(linesFile)}` }
-      ]
-    });
+    archive.pipe(zipStream);
+    archive.append(headerBuffer, { name: "M-Pesa-Header.xlsx" });
+    archive.append(linesBuffer, { name: "M-Pesa-Lines.xlsx" });
+    archive.finalize();
+
+    res.setHeader("Content-Disposition", "attachment; filename=M-Pesa-Export.zip");
+    res.setHeader("Content-Type", "application/zip");
+    zipStream.pipe(res);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-// --- Temporary download route ---
-app.get("/api/download", (req, res) => {
-  const filePath = req.query.file;
-  if (!filePath || !fs.existsSync(filePath)) {
-    return res.status(404).send("File not found");
-  }
-  res.download(filePath);
+// --- Default route (if user visits / directly) ---
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ✅ Export for Vercel (no app.listen)
+// ✅ Export for Vercel
 module.exports = app;
+
+// ✅ For local testing (only runs if executed directly)
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+}
