@@ -7,7 +7,13 @@ const fs = require("fs");
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() }); // In-memory upload
 
-app.use(express.static("public"));
+// ✅ Serve static files (index.html, CSS, JS, etc.)
+const publicPath = path.join(__dirname, "public");
+app.use(express.static(publicPath));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicPath, "index.html"));
+});
 
 // --- Robust amount parser ---
 const parseAmount = (val) => {
@@ -36,7 +42,7 @@ const formatDate = (val) => {
   ).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 };
 
-// --- Upload route ---
+// --- Upload & Process Excel ---
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -138,7 +144,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// --- Download route ---
+// --- Temporary download route ---
 app.get("/api/download", (req, res) => {
   const filePath = req.query.file;
   if (!filePath || !fs.existsSync(filePath)) {
@@ -147,10 +153,5 @@ app.get("/api/download", (req, res) => {
   res.download(filePath);
 });
 
-// ✅ Works locally AND on Vercel
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
-}
-
+// ✅ Export for Vercel (no app.listen)
 module.exports = app;
