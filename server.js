@@ -36,6 +36,7 @@ const formatDate = (val) => {
   ).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
 };
 
+// --- Upload route ---
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -137,7 +138,7 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   }
 });
 
-// Temporary download route
+// --- Download route ---
 app.get("/api/download", (req, res) => {
   const filePath = req.query.file;
   if (!filePath || !fs.existsSync(filePath)) {
@@ -146,5 +147,10 @@ app.get("/api/download", (req, res) => {
   res.download(filePath);
 });
 
-// ✅ Export for Vercel
+// ✅ Works locally AND on Vercel
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
+}
+
 module.exports = app;
