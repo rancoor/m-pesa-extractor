@@ -64,7 +64,6 @@
         return;
       }
 
-      // Show loader
       loader.style.display = "block";
       downloadLinks.style.display = "none";
 
@@ -81,15 +80,21 @@
 
         const data = await res.json();
 
-        // Wait a tiny moment to ensure files are saved
-        setTimeout(() => {
-          headerLink.href = data.files[0];
-          linesLink.href = data.files[1];
+        // ✅ Correctly assign URLs and names
+        if (data.files && data.files.length === 2) {
+          headerLink.href = data.files[0].url;
+          headerLink.download = data.files[0].name;
+
+          linesLink.href = data.files[1].url;
+          linesLink.download = data.files[1].name;
 
           loader.style.display = "none";
           downloadLinks.style.display = "block";
-        }, 500); // 0.5s delay
+        } else {
+          throw new Error("Unexpected response format");
+        }
       } catch (err) {
+        console.error(err);
         loader.style.display = "none";
         alert("Error: " + err.message);
       }
