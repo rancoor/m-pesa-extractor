@@ -193,9 +193,14 @@
           body: formData
         });
 
-        if (!res.ok) throw new Error("Failed to process file");
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error('Server error:', errorText);
+          throw new Error("Failed to process file");
+        }
 
         const data = await res.json();
+        console.log('Response data:', data);
 
         // Display statement information
         if (data.statementInfo) {
@@ -217,13 +222,17 @@
           linesLink.href = data.files[1].url;
           linesLink.download = `M-Pesa-Lines-${dateStr}.xlsx`;
 
+          // Hide loader and show results
           loader.style.display = "none";
-          document.getElementById('resultsContainer').classList.remove('hidden');
+          const resultsContainer = document.getElementById('resultsContainer');
+          resultsContainer.classList.remove('hidden');
+          console.log('Results displayed');
         } else {
+          console.error('Unexpected response format:', data);
           throw new Error("Unexpected response format");
         }
       } catch (err) {
-        console.error(err);
+        console.error('Error processing:', err);
         loader.style.display = "none";
         alert("Error: " + err.message);
       }
