@@ -65,7 +65,7 @@
                 <p class="text-xs text-gray-500">Excel files only (.xlsx, .xls)</p>
               </div>
             </div>
-            <p id="fileName" class="mt-2 text-sm text-gray-600"></p>
+            <p id="fileName" class="mt-2 text-sm text-gray-600 font-medium"></p>
           </div>
 
           <!-- Opening Balance -->
@@ -125,6 +125,18 @@
     const statementInfo = document.getElementById("statementInfo");
     const headerLink = document.getElementById("headerLink");
     const linesLink = document.getElementById("linesLink");
+    const fileName = document.getElementById("fileName");
+
+    // File input change handler
+    fileInput.addEventListener("change", function() {
+      if (this.files && this.files.length > 0) {
+        const file = this.files[0];
+        fileName.textContent = `✓ Selected: ${file.name}`;
+        fileName.className = "mt-2 text-sm text-green-600 font-medium";
+      } else {
+        fileName.textContent = "";
+      }
+    });
 
     processBtn.addEventListener("click", async () => {
       const file = fileInput.files[0];
