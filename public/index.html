@@ -126,8 +126,12 @@
                     <span class="text-gray-900 font-semibold" id="infoStatementID"></span>
                   </div>
                   <div class="flex justify-between text-sm">
-                    <span class="text-gray-600 font-medium">Period</span>
-                    <span class="text-gray-900" id="infoPeriod"></span>
+                    <span class="text-gray-600 font-medium">From</span>
+                    <span class="text-gray-900" id="infoFromDate"></span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-600 font-medium">To</span>
+                    <span class="text-gray-900" id="infoToDate"></span>
                   </div>
                   <div class="flex justify-between text-sm">
                     <span class="text-gray-600 font-medium">Opening Balance</span>
@@ -252,7 +256,8 @@
         // Display statement information
         if (data.statementInfo) {
           document.getElementById("infoStatementID").textContent = data.statementInfo.statementID;
-          document.getElementById("infoPeriod").textContent = `${data.statementInfo.fromDate} to ${data.statementInfo.toDate}`;
+          document.getElementById("infoFromDate").textContent = data.statementInfo.fromDate;
+          document.getElementById("infoToDate").textContent = data.statementInfo.toDate;
           document.getElementById("infoOpeningBalance").textContent = formatCurrency(data.statementInfo.openingBalance);
           document.getElementById("infoClosingBalance").textContent = formatCurrency(data.statementInfo.closingBalance);
           document.getElementById("infoTransactions").textContent = data.statementInfo.totalTransactions.toLocaleString('en-US');
