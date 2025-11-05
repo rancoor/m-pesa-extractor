@@ -7,23 +7,37 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 100%);
       min-height: 100vh;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .accordion-content.active {
+      max-height: 2000px;
+      transition: max-height 0.5s ease-in;
     }
   </style>
 </head>
 <body class="antialiased">
   <!-- Navigation -->
-  <nav class="bg-white shadow-lg">
+  <nav class="glass shadow-lg">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
         <div class="flex items-center">
-          <a href="/" class="text-2xl font-bold text-purple-600">💰 M-Pesa Processor</a>
+          <a href="/" class="text-2xl font-bold text-blue-600">💰 M-Pesa Processor</a>
         </div>
         <div class="flex items-center space-x-4">
-          <a href="/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition">Upload</a>
-          <a href="/history.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition">History</a>
-          <a href="/faq.html" class="px-3 py-2 rounded-md text-sm font-medium bg-purple-600 text-white">FAQ</a>
+          <a href="/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition">Upload</a>
+          <a href="/history.html" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition">History</a>
+          <a href="/faq.html" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-500 text-white">FAQ</a>
         </div>
       </div>
     </div>
@@ -32,165 +46,162 @@
   <!-- Main Content -->
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-20">
     <div class="mb-8">
-      <h1 class="text-3xl font-bold text-white mb-2">Frequently Asked Questions</h1>
-      <p class="text-purple-100">Everything you need to know about using the M-Pesa Processor</p>
+      <h1 class="text-3xl font-bold text-blue-900 mb-2">Frequently Asked Questions</h1>
+      <p class="text-blue-700">Everything you need to know about using the M-Pesa Processor</p>
     </div>
 
-    <!-- Main FAQ Section -->
-    <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-4">📋 Uploading Bank Statements to Dynamics 365 Finance & Operations</h2>
-      <p class="text-gray-600 mb-6">This guide will walk you through the process of importing M-Pesa statement files (Header and Lines) into D365 Finance and Operations using Data Management.</p>
-
-      <!-- Step 1 -->
-      <h3 class="text-xl font-semibold text-purple-600 mt-8 mb-4">Step 1: Access Data Management</h3>
-      <div class="bg-gray-50 border-l-4 border-purple-500 p-5 rounded mb-4">
-        <div class="flex items-start">
-          <span class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">1</span>
-          <div class="flex-1">
-            <strong class="text-gray-900">Navigate to Data Management workspace</strong>
-            <p class="text-gray-600 mt-2">In D365 F&O, go to: <code class="bg-gray-200 px-2 py-1 rounded text-sm">Workspaces > Data Management</code></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 2 -->
-      <h3 class="text-xl font-semibold text-purple-600 mt-8 mb-4">Step 2: Create Import Project</h3>
-      <div class="bg-gray-50 border-l-4 border-purple-500 p-5 rounded mb-4">
-        <div class="flex items-start">
-          <span class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">2</span>
-          <div class="flex-1">
-            <strong class="text-gray-900">Create a new import project</strong>
-            <ul class="text-gray-600 mt-2 space-y-1 list-disc list-inside">
-              <li>Click on <strong>Import</strong> tile</li>
-              <li>Enter a project name (e.g., "M-Pesa Statement Import")</li>
-              <li>Select <strong>Excel</strong> as the source data format</li>
-              <li>Click <strong>Create</strong></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3 -->
-      <h3 class="text-xl font-semibold text-purple-600 mt-8 mb-4">Step 3: Add Header Entity</h3>
-      <div class="bg-gray-50 border-l-4 border-purple-500 p-5 rounded mb-4">
-        <div class="flex items-start">
-          <span class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">3</span>
-          <div class="flex-1">
-            <strong class="text-gray-900">Add Bank Statement Header entity</strong>
-            <ul class="text-gray-600 mt-2 space-y-1 list-disc list-inside">
-              <li>Click <strong>Add file</strong></li>
-              <li>In the entity name field, search for <code class="bg-gray-200 px-2 py-1 rounded text-sm">Bank statement header</code></li>
-              <li>Select the entity from the dropdown</li>
-              <li>Upload the <strong>M-Pesa-Header.xlsx</strong> file</li>
-              <li>Click <strong>Upload and add</strong></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded my-4">
-        <p class="text-sm text-yellow-800"><strong>💡 Tip:</strong> Ensure the field mapping is correct by clicking <strong>View map</strong>. The system usually auto-maps fields, but verify that STATEMENTID, BANKACCOUNT, CURRENCY, etc., are properly mapped.</p>
-      </div>
-
-      <!-- Step 4 -->
-      <h3 class="text-xl font-semibold text-purple-600 mt-8 mb-4">Step 4: Add Lines Entity</h3>
-      <div class="bg-gray-50 border-l-4 border-purple-500 p-5 rounded mb-4">
-        <div class="flex items-start">
-          <span class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">4</span>
-          <div class="flex-1">
-            <strong class="text-gray-900">Add Bank Statement Lines entity</strong>
-            <ul class="text-gray-600 mt-2 space-y-1 list-disc list-inside">
-              <li>Click <strong>Add file</strong> again</li>
-              <li>Search for <code class="bg-gray-200 px-2 py-1 rounded text-sm">Bank statement lines</code></li>
-              <li>Select the entity from the dropdown</li>
-              <li>Upload the <strong>M-Pesa-Lines.xlsx</strong> file</li>
-              <li>Click <strong>Upload and add</strong></li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded my-4">
-        <p class="text-sm text-red-800"><strong>⚠️ Important:</strong> Always import the Header file BEFORE the Lines file. The lines depend on the header being present in the system.</p>
-      </div>
-
-      <!-- Step 5 -->
-      <h3 class="text-xl font-semibold text-purple-600 mt-8 mb-4">Step 5: Import Data</h3>
-      <div class="bg-gray-50 border-l-4 border-purple-500 p-5 rounded mb-4">
-        <div class="flex items-start">
-          <span class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">5</span>
-          <div class="flex-1">
-            <strong class="text-gray-900">Execute the import</strong>
-            <ul class="text-gray-600 mt-2 space-y-1 list-disc list-inside">
-              <li>Review the entities in your import project</li>
-              <li>Ensure the sequence is correct (Header first, then Lines)</li>
-              <li>Click <strong>Import</strong> button</li>
-              <li>Wait for the import to complete</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 6 -->
-      <h3 class="text-xl font-semibold text-purple-600 mt-8 mb-4">Step 6: Validate the Import</h3>
-      <div class="bg-gray-50 border-l-4 border-purple-500 p-5 rounded mb-4">
-        <div class="flex items-start">
-          <span class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">6</span>
-          <div class="flex-1">
-            <strong class="text-gray-900">Check import status and validate data</strong>
-            <ul class="text-gray-600 mt-2 space-y-1 list-disc list-inside">
-              <li>Click on the execution details to view the status</li>
-              <li>Check for any errors or warnings</li>
-              <li>Review the <strong>Staging data</strong> if needed</li>
-              <li>Navigate to <code class="bg-gray-200 px-2 py-1 rounded text-sm">Cash and bank management > Bank statements</code></li>
-              <li>Verify that your M-Pesa statement appears in the list</li>
-              <li>Open the statement and check all details are correct</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 7 -->
-      <h3 class="text-xl font-semibold text-purple-600 mt-8 mb-4">Step 7: Reconcile the Statement</h3>
-      <div class="bg-gray-50 border-l-4 border-purple-500 p-5 rounded mb-4">
-        <div class="flex items-start">
-          <span class="flex-shrink-0 w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">7</span>
-          <div class="flex-1">
-            <strong class="text-gray-900">Perform bank reconciliation</strong>
-            <ul class="text-gray-600 mt-2 space-y-1 list-disc list-inside">
-              <li>Go to <code class="bg-gray-200 px-2 py-1 rounded text-sm">Cash and bank management > Bank accounts</code></li>
-              <li>Select the MPESA bank account</li>
-              <li>Click <strong>Reconcile</strong> > <strong>Reconcile account</strong></li>
-              <li>Match the imported statement lines with bank transactions</li>
-              <li>Mark lines as matched</li>
-              <li>Post the reconciliation when complete</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded my-4">
-        <p class="text-sm text-yellow-800"><strong>💡 Best Practice:</strong> Always validate your statement before posting. Check that transaction amounts, dates, and references match your actual M-Pesa statement.</p>
-      </div>
-    </div>
-
-    <!-- Common Questions Section -->
-    <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">❓ Common Questions</h2>
-      
-      <div class="space-y-6">
+    <!-- D365 Upload Guide Accordion -->
+    <div class="glass rounded-lg shadow-lg mb-4 overflow-hidden">
+      <button onclick="toggleAccordion('upload-guide')" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-blue-50 transition">
         <div>
-          <h4 class="text-lg font-semibold text-gray-900 mb-2">Q: What is the Opening Balance field for?</h4>
+          <h3 class="text-xl font-bold text-gray-900">📋 Uploading Bank Statements to Dynamics 365 F&O</h3>
+          <p class="text-sm text-gray-600 mt-1">Complete step-by-step guide for importing statements</p>
+        </div>
+        <svg class="w-6 h-6 text-blue-500 transform transition-transform accordion-icon" id="upload-guide-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+      <div id="upload-guide" class="accordion-content">
+        <div class="px-6 pb-6 space-y-6">
+          <p class="text-gray-600">This guide will walk you through the process of importing M-Pesa statement files (Header and Lines) into D365 Finance and Operations using Data Management.</p>
+
+          <!-- Steps -->
+          <div class="space-y-4">
+            <!-- Step 1 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <div class="flex items-start">
+                <span class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">1</span>
+                <div>
+                  <strong class="text-gray-900">Access Data Management</strong>
+                  <p class="text-gray-600 text-sm mt-1">Navigate to: <code class="bg-white px-2 py-1 rounded text-xs">Workspaces > Data Management</code></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <div class="flex items-start">
+                <span class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">2</span>
+                <div>
+                  <strong class="text-gray-900">Create Import Project</strong>
+                  <ul class="text-gray-600 text-sm mt-1 space-y-1 list-disc list-inside">
+                    <li>Click <strong>Import</strong> tile</li>
+                    <li>Enter project name (e.g., "M-Pesa Statement Import")</li>
+                    <li>Select <strong>Excel</strong> as source data format</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <div class="flex items-start">
+                <span class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">3</span>
+                <div>
+                  <strong class="text-gray-900">Add Header Entity</strong>
+                  <ul class="text-gray-600 text-sm mt-1 space-y-1 list-disc list-inside">
+                    <li>Search for <code class="bg-white px-2 py-1 rounded text-xs">Bank statement header</code></li>
+                    <li>Upload <strong>M-Pesa-Header.xlsx</strong></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <div class="flex items-start">
+                <span class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">4</span>
+                <div>
+                  <strong class="text-gray-900">Add Lines Entity</strong>
+                  <ul class="text-gray-600 text-sm mt-1 space-y-1 list-disc list-inside">
+                    <li>Search for <code class="bg-white px-2 py-1 rounded text-xs">Bank statement lines</code></li>
+                    <li>Upload <strong>M-Pesa-Lines.xlsx</strong></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-red-50 border-l-4 border-red-400 p-3 rounded">
+              <p class="text-sm text-red-800"><strong>⚠️ Important:</strong> Always import Header BEFORE Lines!</p>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <div class="flex items-start">
+                <span class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">5</span>
+                <div>
+                  <strong class="text-gray-900">Execute Import</strong>
+                  <p class="text-gray-600 text-sm mt-1">Review entities and click <strong>Import</strong></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 6 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <div class="flex items-start">
+                <span class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">6</span>
+                <div>
+                  <strong class="text-gray-900">Validate Import</strong>
+                  <p class="text-gray-600 text-sm mt-1">Check <code class="bg-white px-2 py-1 rounded text-xs">Cash and bank management > Bank statements</code></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 7 -->
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+              <div class="flex items-start">
+                <span class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold mr-3 text-sm">7</span>
+                <div>
+                  <strong class="text-gray-900">Reconcile Statement</strong>
+                  <p class="text-gray-600 text-sm mt-1">Match and post bank reconciliation</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Opening Balance Question -->
+    <div class="glass rounded-lg shadow-lg mb-4 overflow-hidden">
+      <button onclick="toggleAccordion('opening-balance')" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-blue-50 transition">
+        <h3 class="text-lg font-semibold text-gray-900">What is the Opening Balance field for?</h3>
+        <svg class="w-5 h-5 text-blue-500 transform transition-transform accordion-icon" id="opening-balance-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+      <div id="opening-balance" class="accordion-content">
+        <div class="px-6 pb-4">
           <p class="text-gray-600">The opening balance is the account balance at the start of the statement period. This should match the closing balance from your previous statement. If this is your first statement, enter the initial account balance.</p>
         </div>
+      </div>
+    </div>
 
-        <div>
-          <h4 class="text-lg font-semibold text-gray-900 mb-2">Q: Where does the Closing Balance come from?</h4>
+    <!-- Closing Balance Question -->
+    <div class="glass rounded-lg shadow-lg mb-4 overflow-hidden">
+      <button onclick="toggleAccordion('closing-balance')" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-blue-50 transition">
+        <h3 class="text-lg font-semibold text-gray-900">Where does the Closing Balance come from?</h3>
+        <svg class="w-5 h-5 text-blue-500 transform transition-transform accordion-icon" id="closing-balance-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+      <div id="closing-balance" class="accordion-content">
+        <div class="px-6 pb-4">
           <p class="text-gray-600">The closing balance is automatically extracted from your M-Pesa statement file. Look for a row labeled "Closing Balance" in your Excel file.</p>
         </div>
+      </div>
+    </div>
 
-        <div>
-          <h4 class="text-lg font-semibold text-gray-900 mb-2">Q: What if the import fails?</h4>
+    <!-- Import Fails Question -->
+    <div class="glass rounded-lg shadow-lg mb-4 overflow-hidden">
+      <button onclick="toggleAccordion('import-fails')" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-blue-50 transition">
+        <h3 class="text-lg font-semibold text-gray-900">What if the import fails?</h3>
+        <svg class="w-5 h-5 text-blue-500 transform transition-transform accordion-icon" id="import-fails-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+      <div id="import-fails" class="accordion-content">
+        <div class="px-6 pb-4">
           <p class="text-gray-600 mb-2">Common reasons for import failures:</p>
           <ul class="text-gray-600 list-disc list-inside space-y-1 ml-4">
             <li>Incorrect file format - ensure you're using the generated Excel files</li>
@@ -199,15 +210,35 @@
             <li>Bank account doesn't exist - ensure MPESA bank account is set up in D365</li>
           </ul>
         </div>
+      </div>
+    </div>
 
-        <div>
-          <h4 class="text-lg font-semibold text-gray-900 mb-2">Q: Can I reprocess the same statement?</h4>
+    <!-- Reprocess Question -->
+    <div class="glass rounded-lg shadow-lg mb-4 overflow-hidden">
+      <button onclick="toggleAccordion('reprocess')" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-blue-50 transition">
+        <h3 class="text-lg font-semibold text-gray-900">Can I reprocess the same statement?</h3>
+        <svg class="w-5 h-5 text-blue-500 transform transition-transform accordion-icon" id="reprocess-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+      <div id="reprocess" class="accordion-content">
+        <div class="px-6 pb-4">
           <p class="text-gray-600">Each time you process a statement, it generates a unique Statement ID based on the timestamp. However, you should avoid uploading duplicate statements to D365 to prevent reconciliation issues.</p>
         </div>
+      </div>
+    </div>
 
-        <div>
-          <h4 class="text-lg font-semibold text-gray-900 mb-2">Q: How do I set up the MPESA bank account in D365?</h4>
-          <p class="text-gray-600 mb-2">Go to <code class="bg-gray-200 px-2 py-1 rounded text-sm">Cash and bank management > Bank accounts > Bank accounts</code> and create a new account with:</p>
+    <!-- Bank Account Setup -->
+    <div class="glass rounded-lg shadow-lg mb-4 overflow-hidden">
+      <button onclick="toggleAccordion('bank-setup')" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-blue-50 transition">
+        <h3 class="text-lg font-semibold text-gray-900">How do I set up the MPESA bank account in D365?</h3>
+        <svg class="w-5 h-5 text-blue-500 transform transition-transform accordion-icon" id="bank-setup-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+      <div id="bank-setup" class="accordion-content">
+        <div class="px-6 pb-4">
+          <p class="text-gray-600 mb-2">Go to <code class="bg-blue-50 px-2 py-1 rounded text-sm">Cash and bank management > Bank accounts</code> and create:</p>
           <ul class="text-gray-600 list-disc list-inside space-y-1 ml-4">
             <li>Bank account number: <strong>MPESA</strong></li>
             <li>Currency: <strong>KES</strong></li>
@@ -215,51 +246,63 @@
             <li>Main account: Link to appropriate ledger account</li>
           </ul>
         </div>
+      </div>
+    </div>
 
+    <!-- Troubleshooting Accordion -->
+    <div class="glass rounded-lg shadow-lg mb-4 overflow-hidden">
+      <button onclick="toggleAccordion('troubleshooting')" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-blue-50 transition">
         <div>
-          <h4 class="text-lg font-semibold text-gray-900 mb-2">Q: What Excel format does M-Pesa provide?</h4>
-          <p class="text-gray-600">M-Pesa typically provides statement downloads in Excel format (.xlsx) with transaction details including date, description, paid in amounts, withdrawn amounts, and balance information.</p>
+          <h3 class="text-xl font-bold text-gray-900">🛠️ Troubleshooting</h3>
+          <p class="text-sm text-gray-600 mt-1">Common errors and solutions</p>
+        </div>
+        <svg class="w-6 h-6 text-blue-500 transform transition-transform accordion-icon" id="troubleshooting-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+      <div id="troubleshooting" class="accordion-content">
+        <div class="px-6 pb-6 space-y-4">
+          <div>
+            <h4 class="text-md font-semibold text-red-600 mb-1">Error: "Bank account not found"</h4>
+            <p class="text-gray-600 text-sm"><strong>Solution:</strong> Create the MPESA bank account in D365 F&O before importing statements.</p>
+          </div>
+          <div>
+            <h4 class="text-md font-semibold text-red-600 mb-1">Error: "Duplicate Statement ID"</h4>
+            <p class="text-gray-600 text-sm"><strong>Solution:</strong> This statement has already been imported. Check the History page.</p>
+          </div>
+          <div>
+            <h4 class="text-md font-semibold text-red-600 mb-1">Balances don't match</h4>
+            <p class="text-gray-600 text-sm mb-1"><strong>Solution:</strong> Verify that:</p>
+            <ul class="text-gray-600 text-sm list-disc list-inside ml-4 space-y-1">
+              <li>Opening balance matches previous closing balance</li>
+              <li>Closing balance was correctly extracted</li>
+              <li>All transactions were properly imported</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Troubleshooting Section -->
-    <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">🛠️ Troubleshooting</h2>
-      
-      <div class="space-y-6">
-        <div>
-          <h4 class="text-lg font-semibold text-red-600 mb-2">Error: "Bank account not found"</h4>
-          <p class="text-gray-600"><strong>Solution:</strong> Create the MPESA bank account in D365 F&O before importing statements.</p>
-        </div>
-
-        <div>
-          <h4 class="text-lg font-semibold text-red-600 mb-2">Error: "Duplicate Statement ID"</h4>
-          <p class="text-gray-600"><strong>Solution:</strong> This statement has already been imported. Check the History page to see previously processed statements.</p>
-        </div>
-
-        <div>
-          <h4 class="text-lg font-semibold text-red-600 mb-2">Balances don't match</h4>
-          <p class="text-gray-600 mb-2"><strong>Solution:</strong> Verify that:</p>
-          <ul class="text-gray-600 list-disc list-inside space-y-1 ml-4">
-            <li>The opening balance entered matches your previous closing balance</li>
-            <li>The closing balance was correctly extracted from the statement</li>
-            <li>All transactions were properly imported</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Need Help Section -->
-    <div class="bg-white rounded-lg shadow-lg p-8">
-      <h2 class="text-2xl font-bold text-gray-900 mb-4">📞 Need More Help?</h2>
-      <p class="text-gray-600 mb-4">If you encounter issues not covered in this FAQ:</p>
+    <!-- Need Help -->
+    <div class="glass rounded-lg shadow-lg p-6">
+      <h3 class="text-xl font-bold text-gray-900 mb-3">📞 Need More Help?</h3>
+      <p class="text-gray-600 mb-3">If you encounter issues not covered in this FAQ:</p>
       <ul class="text-gray-600 list-disc list-inside space-y-2 ml-4">
-        <li>Check the <a href="/history.html" class="text-purple-600 hover:text-purple-800 underline">History page</a> to review previously processed statements</li>
+        <li>Check the <a href="/history.html" class="text-blue-600 hover:text-blue-800 underline">History page</a> to review processed statements</li>
         <li>Verify your M-Pesa statement file format</li>
-        <li>Contact your D365 system administrator for assistance with Data Management</li>
+        <li>Contact your D365 system administrator for assistance</li>
       </ul>
     </div>
   </div>
+
+  <script>
+    function toggleAccordion(id) {
+      const content = document.getElementById(id);
+      const icon = document.getElementById(id + '-icon');
+      
+      content.classList.toggle('active');
+      icon.classList.toggle('rotate-180');
+    }
+  </script>
 </body>
 </html>
