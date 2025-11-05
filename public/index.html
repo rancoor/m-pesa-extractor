@@ -107,23 +107,28 @@
             <p class="mt-2 text-gray-600">Processing your statement...</p>
           </div>
 
-          <!-- Statement Info -->
-          <div id="statementInfo" class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-            <h4 class="text-sm font-semibold text-blue-800 mb-2">Statement Information</h4>
-            <div class="text-sm text-blue-700 space-y-1">
-              <p><strong>Statement ID:</strong> <span id="infoStatementID"></span></p>
-              <p><strong>Period:</strong> <span id="infoPeriod"></span></p>
-              <p><strong>Opening Balance:</strong> KES <span id="infoOpeningBalance"></span></p>
-              <p><strong>Closing Balance:</strong> KES <span id="infoClosingBalance"></span></p>
-              <p><strong>Total Transactions:</strong> <span id="infoTransactions"></span></p>
-            </div>
-          </div>
+          <!-- Statement Info & Downloads Side by Side -->
+          <div id="resultsContainer" style="display: none;">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Statement Info -->
+              <div id="statementInfo" class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                <h4 class="text-sm font-semibold text-blue-800 mb-2">Statement Information</h4>
+                <div class="text-xs text-blue-700 space-y-1">
+                  <p><strong>Statement ID:</strong> <span id="infoStatementID"></span></p>
+                  <p><strong>Period:</strong> <span id="infoPeriod"></span></p>
+                  <p><strong>Opening:</strong> KES <span id="infoOpeningBalance"></span></p>
+                  <p><strong>Closing:</strong> KES <span id="infoClosingBalance"></span></p>
+                  <p><strong>Transactions:</strong> <span id="infoTransactions"></span></p>
+                </div>
+              </div>
 
-          <!-- Download Links -->
-          <div id="download-links" class="space-y-3">
-            <p class="text-center text-sm font-medium text-green-600">✓ Files generated successfully!</p>
-            <a id="headerLink" href="#" download class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">Download Header File</a>
-            <a id="linesLink" href="#" download class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">Download Lines File</a>
+              <!-- Download Links -->
+              <div id="download-links" class="space-y-2">
+                <p class="text-sm font-medium text-green-600 mb-2">✓ Files Ready</p>
+                <a id="headerLink" href="#" download class="w-full flex justify-center py-2 px-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">Download Header</a>
+                <a id="linesLink" href="#" download class="w-full flex justify-center py-2 px-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition">Download Lines</a>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -176,8 +181,7 @@
       }
 
       loader.style.display = "block";
-      downloadLinks.style.display = "none";
-      statementInfo.style.display = "none";
+      document.getElementById('resultsContainer').style.display = "none";
 
       const formData = new FormData();
       formData.append("file", file);
@@ -200,19 +204,21 @@
           document.getElementById("infoOpeningBalance").textContent = parseFloat(data.statementInfo.openingBalance).toFixed(2);
           document.getElementById("infoClosingBalance").textContent = parseFloat(data.statementInfo.closingBalance).toFixed(2);
           document.getElementById("infoTransactions").textContent = data.statementInfo.totalTransactions;
-          statementInfo.style.display = "block";
         }
 
-        // Set download links
+        // Set download links with date
         if (data.files && data.files.length === 2) {
+          const today = new Date();
+          const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
+          
           headerLink.href = data.files[0].url;
-          headerLink.download = data.files[0].name;
+          headerLink.download = `M-Pesa-Header-${dateStr}.xlsx`;
 
           linesLink.href = data.files[1].url;
-          linesLink.download = data.files[1].name;
+          linesLink.download = `M-Pesa-Lines-${dateStr}.xlsx`;
 
           loader.style.display = "none";
-          downloadLinks.style.display = "block";
+          document.getElementById('resultsContainer').style.display = "block";
         } else {
           throw new Error("Unexpected response format");
         }
