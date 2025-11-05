@@ -207,13 +207,18 @@
       // Render rows
       tableBody.innerHTML = "";
       pageStatements.forEach(stmt => {
+        console.log('Statement dates:', stmt.statementID, 'fromDate:', stmt.fromDate, 'toDate:', stmt.toDate);
+        const fromDateFormatted = formatDate(stmt.fromDate);
+        const toDateFormatted = formatDate(stmt.toDate);
+        console.log('Formatted dates:', 'from:', fromDateFormatted, 'to:', toDateFormatted);
+        
         const row = document.createElement("tr");
         row.className = "hover:bg-blue-50 transition-colors";
         row.innerHTML = `
           <td class="px-4 py-3 text-sm font-semibold text-gray-900">${stmt.statementID}</td>
           <td class="px-4 py-3 text-sm text-gray-600">
-            <div class="text-xs text-gray-500">From: ${formatDate(stmt.fromDate)}</div>
-            <div class="text-xs text-gray-500">To: ${formatDate(stmt.toDate)}</div>
+            <div class="text-xs text-gray-500">From: ${fromDateFormatted}</div>
+            <div class="text-xs text-gray-500">To: ${toDateFormatted}</div>
           </td>
           <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">KES ${parseFloat(stmt.openingBalance).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
           <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">KES ${parseFloat(stmt.closingBalance).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
