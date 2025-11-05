@@ -2,9 +2,35 @@ const express = require("express");
 const multer = require("multer");
 const XLSX = require("xlsx");
 const path = require("path");
+const sqlite3 = require("sqlite3").verbose();
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Initialize database
+const db = new sqlite3.Database("./mpesa_statements.db", (err) => {
+  if (err) console.error("Database connection error:", err);
+  else console.log("Connected to SQLite database");
+});
+
+// Create statements table
+db.run(`
+  CREATE TABLE IF NOT EXISTS statements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    statementID INTEGER NOT NULL,
+    bankAccount TEXT NOT NULL,
+    currency TEXT NOT NULL,
+    openingBalance REAL NOT NULL,
+    closingBalance REAL NOT NULL,
+    fromDate TEXT NOT NULL,
+    toDate TEXT NOT NULL,
+    processedDate TEXT NOT NULL,
+    totalTransactions INTEGER NOT NULL,
+    fileName TEXT
+  )
+`);
+
+app.use(express.json());
 
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -39,12 +65,15 @@ app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
+    // Get opening balance from request
+    const openingBalance = parseFloat(req.body.openingBalance) || 0;
+
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const ws = workbook.Sheets[workbook.SheetNames[0]];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-    const statementID = 1;
-    const openingBalance = 0;
+    // Generate unique statement ID based on timestamp
+    const statementID = Date.now();
 
     // Extract from/to
     let fromDateRaw = "";
@@ -57,6 +86,26 @@ app.post("/upload", upload.single("file"), async (req, res) => {
 
     const fromDate = formatDate(fromDateRaw);
     const toDate = formatDate(toDateRaw);
+
+    // Extract closing balance from the statement
+    let closingBalance = 0;
+    for (let i = data.length - 1; i >= 0; i--) {
+      const row = data[i];
+      if (row && row.length > 0) {
+        const firstCell = String(row[0]).toLowerCase();
+        if (firstCell.includes("closing") || firstCell.includes("balance")) {
+          // Look for the balance value in the same row
+          for (let j = 1; j < row.length; j++) {
+            const val = parseAmount(row[j]);
+            if (val !== 0) {
+              closingBalance = val;
+              break;
+            }
+          }
+          if (closingBalance !== 0) break;
+        }
+      }
+    }
 
     // Lines
     const linesSheetData = [
@@ -99,27 +148,37 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     XLSX.utils.book_append_sheet(linesWB, XLSX.utils.aoa_to_sheet(linesSheetData), "Bank_statement_lines");
     const linesBuffer = XLSX.write(linesWB, { type: "buffer", bookType: "xlsx" });
 
-    // Header workbook (in memory)
-    let endingBalance = 0;
-    for (let i = 1; i < linesSheetData.length; i++) endingBalance += linesSheetData[i][4];
-
+    // Header workbook (in memory) - use closing balance from statement
     const headerWB = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(
       headerWB,
       XLSX.utils.aoa_to_sheet([
         ["STATEMENTID", "BANKACCOUNT", "CURRENCY", "ENDINGBALANCE", "FROMDATE", "OPENINGBALANCE", "TODATE"],
-        [statementID, "MPESA", "KES", parseFloat(endingBalance.toFixed(3)), fromDate, openingBalance, toDate],
+        [statementID, "MPESA", "KES", parseFloat(closingBalance.toFixed(3)), fromDate, parseFloat(openingBalance.toFixed(3)), toDate],
       ]),
       "Bank_statement_header"
     );
     const headerBuffer = XLSX.write(headerWB, { type: "buffer", bookType: "xlsx" });
 
     // Save buffers in memory (simple store)
-    const id = Date.now().toString();
+    const id = statementID.toString();
     memoryFiles[id] = {
       header: headerBuffer,
       lines: linesBuffer,
     };
+
+    // Save to database
+    const processedDate = new Date().toISOString();
+    const totalTransactions = linesSheetData.length - 1; // Exclude header row
+    
+    db.run(
+      `INSERT INTO statements (statementID, bankAccount, currency, openingBalance, closingBalance, fromDate, toDate, processedDate, totalTransactions, fileName) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [statementID, "MPESA", "KES", openingBalance, closingBalance, fromDate, toDate, processedDate, totalTransactions, req.file.originalname],
+      (err) => {
+        if (err) console.error("Database insert error:", err);
+      }
+    );
 
     // Send JSON with download links
     res.json({
@@ -127,6 +186,14 @@ app.post("/upload", upload.single("file"), async (req, res) => {
         { name: "M-Pesa-Header.xlsx", url: `/download/${id}/header` },
         { name: "M-Pesa-Lines.xlsx", url: `/download/${id}/lines` },
       ],
+      statementInfo: {
+        statementID,
+        openingBalance,
+        closingBalance,
+        fromDate,
+        toDate,
+        totalTransactions
+      }
     });
   } catch (err) {
     console.error(err);
@@ -150,6 +217,37 @@ app.get("/download/:id/:type", (req, res) => {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   );
   res.send(file);
+});
+
+// History endpoint
+app.get("/api/history", (req, res) => {
+  const { fromDate, toDate, statementID } = req.query;
+  
+  let query = "SELECT * FROM statements WHERE 1=1";
+  const params = [];
+  
+  if (fromDate) {
+    query += " AND DATE(fromDate) >= DATE(?)";
+    params.push(fromDate);
+  }
+  if (toDate) {
+    query += " AND DATE(toDate) <= DATE(?)";
+    params.push(toDate);
+  }
+  if (statementID) {
+    query += " AND statementID = ?";
+    params.push(statementID);
+  }
+  
+  query += " ORDER BY processedDate DESC";
+  
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error("Database query error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json({ statements: rows });
+  });
 });
 
 // Fallback for /
