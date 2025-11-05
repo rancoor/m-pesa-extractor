@@ -51,8 +51,18 @@ const parseAmount = (val) => {
 
 const formatDate = (val) => {
   if (!val) return "";
-  const d = new Date(val);
-  if (isNaN(d)) return String(val);
+  
+  // Handle Excel serial date numbers
+  let d;
+  if (typeof val === 'number') {
+    // Excel date serial number (days since 1900-01-01)
+    d = new Date((val - 25569) * 86400 * 1000);
+  } else {
+    d = new Date(val);
+  }
+  
+  if (isNaN(d.getTime())) return String(val);
+  
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate()
   ).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(
