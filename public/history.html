@@ -86,29 +86,45 @@
     </div>
 
     <!-- Table Container -->
-    <div class="glass rounded-lg shadow-lg overflow-hidden" id="tableContainer" style="display: none;">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">Processed Statements (<span id="totalCount">0</span>)</h3>
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden" id="tableContainer" style="display: none;">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-white">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-bold text-gray-900">Processed Statements (<span id="totalCount">0</span>)</h3>
+          <div class="text-sm text-gray-600">
+            Showing <span id="showingStart">0</span>-<span id="showingEnd">0</span> of <span id="totalCount2">0</span>
+          </div>
+        </div>
       </div>
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statement ID</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bank Account</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Currency</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opening Balance</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Closing Balance</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">From Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">To Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Transactions</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Processed Date</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File Name</th>
+        <table class="min-w-full">
+          <thead>
+            <tr class="bg-gray-100 border-b-2 border-gray-200">
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Statement ID</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Period</th>
+              <th class="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wide">Opening</th>
+              <th class="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wide">Closing</th>
+              <th class="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wide">Transactions</th>
+              <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide">Processed</th>
             </tr>
           </thead>
-          <tbody id="statementsTableBody" class="bg-white divide-y divide-gray-200">
+          <tbody id="statementsTableBody" class="divide-y divide-gray-100">
           </tbody>
         </table>
+      </div>
+      
+      <!-- Pagination -->
+      <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+          <button id="prevBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition">
+            ← Previous
+          </button>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-700">Page <span id="currentPage" class="font-semibold">1</span> of <span id="totalPages" class="font-semibold">1</span></span>
+          </div>
+          <button id="nextBtn" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition">
+            Next →
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -118,8 +134,19 @@
     const tableContainer = document.getElementById("tableContainer");
     const tableBody = document.getElementById("statementsTableBody");
     const totalCount = document.getElementById("totalCount");
+    const totalCount2 = document.getElementById("totalCount2");
     const searchBtn = document.getElementById("searchBtn");
     const clearBtn = document.getElementById("clearBtn");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const currentPageEl = document.getElementById("currentPage");
+    const totalPagesEl = document.getElementById("totalPages");
+    const showingStart = document.getElementById("showingStart");
+    const showingEnd = document.getElementById("showingEnd");
+    
+    let allStatements = [];
+    let currentPage = 1;
+    const itemsPerPage = 10;
 
     async function loadStatements() {
       loader.style.display = "block";
@@ -144,7 +171,9 @@
         loader.style.display = "none";
         
         if (data.statements && data.statements.length > 0) {
-          displayStatements(data.statements);
+          allStatements = data.statements;
+          currentPage = 1;
+          displayPage();
           tableContainer.style.display = "block";
         } else {
           noData.style.display = "block";
@@ -156,28 +185,67 @@
       }
     }
 
-    function displayStatements(statements) {
+    function displayPage() {
+      const totalItems = allStatements.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const endIdx = Math.min(startIdx + itemsPerPage, totalItems);
+      const pageStatements = allStatements.slice(startIdx, endIdx);
+      
+      // Update counts
+      totalCount.textContent = totalItems;
+      totalCount2.textContent = totalItems;
+      currentPageEl.textContent = currentPage;
+      totalPagesEl.textContent = totalPages;
+      showingStart.textContent = totalItems > 0 ? startIdx + 1 : 0;
+      showingEnd.textContent = endIdx;
+      
+      // Update buttons
+      prevBtn.disabled = currentPage === 1;
+      nextBtn.disabled = currentPage === totalPages;
+      
+      // Render rows
       tableBody.innerHTML = "";
-      totalCount.textContent = statements.length;
-
-      statements.forEach(stmt => {
+      pageStatements.forEach(stmt => {
         const row = document.createElement("tr");
-        row.className = "hover:bg-gray-50";
+        row.className = "hover:bg-blue-50 transition-colors";
         row.innerHTML = `
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${stmt.statementID}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${stmt.bankAccount}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${stmt.currency}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parseFloat(stmt.openingBalance).toFixed(2)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parseFloat(stmt.closingBalance).toFixed(2)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(stmt.fromDate)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDate(stmt.toDate)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${stmt.totalTransactions}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${formatDateTime(stmt.processedDate)}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${stmt.fileName || 'N/A'}</td>
+          <td class="px-4 py-3 text-sm font-semibold text-gray-900">${stmt.statementID}</td>
+          <td class="px-4 py-3 text-sm text-gray-600">
+            <div class="text-xs text-gray-500">From: ${formatDate(stmt.fromDate)}</div>
+            <div class="text-xs text-gray-500">To: ${formatDate(stmt.toDate)}</div>
+          </td>
+          <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">KES ${parseFloat(stmt.openingBalance).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">KES ${parseFloat(stmt.closingBalance).toLocaleString('en-US', {minimumFractionDigits: 2})}</td>
+          <td class="px-4 py-3 text-sm text-center">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              ${stmt.totalTransactions}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-sm text-gray-600">
+            <div class="text-xs">${formatDateTime(stmt.processedDate)}</div>
+            <div class="text-xs text-gray-400">${stmt.fileName || 'N/A'}</div>
+          </td>
         `;
         tableBody.appendChild(row);
       });
     }
+    
+    // Pagination handlers
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        displayPage();
+      }
+    });
+    
+    nextBtn.addEventListener('click', () => {
+      const totalPages = Math.ceil(allStatements.length / itemsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        displayPage();
+      }
+    });
 
     function formatDate(dateStr) {
       if (!dateStr) return 'N/A';
