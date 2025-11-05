@@ -268,11 +268,16 @@
           const today = new Date();
           const dateStr = `${String(today.getDate()).padStart(2, '0')}-${String(today.getMonth() + 1).padStart(2, '0')}-${today.getFullYear()}`;
           
+          const headerFileName = `M-Pesa-Header-${dateStr}.xlsx`;
+          const linesFileName = `M-Pesa-Lines-${dateStr}.xlsx`;
+          
           headerLink.href = data.files[0].url;
-          headerLink.download = `M-Pesa-Header-${dateStr}.xlsx`;
+          headerLink.setAttribute('download', headerFileName);
 
           linesLink.href = data.files[1].url;
-          linesLink.download = `M-Pesa-Lines-${dateStr}.xlsx`;
+          linesLink.setAttribute('download', linesFileName);
+          
+          console.log('Download filenames:', headerFileName, linesFileName);
 
           // Hide loader and show results
           loader.style.display = "none";
