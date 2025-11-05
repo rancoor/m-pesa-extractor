@@ -85,17 +85,28 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     // Generate unique statement ID based on timestamp
     const statementID = Date.now();
 
-    // Extract from/to
+    // Extract from/to dates - try multiple rows and methods
     let fromDateRaw = "";
     let toDateRaw = "";
-    const row4 = XLSX.utils.sheet_to_json(ws, { header: 1, range: 3, raw: false })[0] || [];
-    for (let j = 0; j < row4.length; j++) {
-      if (String(row4[j]).toLowerCase() === "from" && row4[j + 1]) fromDateRaw = row4[j + 1];
-      if (String(row4[j]).toLowerCase() === "to" && row4[j + 1]) toDateRaw = row4[j + 1];
+    
+    // Try reading with raw: true to get Excel serial numbers
+    const row4Raw = XLSX.utils.sheet_to_json(ws, { header: 1, range: 3, raw: true })[0] || [];
+    const row4Text = XLSX.utils.sheet_to_json(ws, { header: 1, range: 3, raw: false })[0] || [];
+    
+    for (let j = 0; j < row4Text.length; j++) {
+      const cellText = String(row4Text[j]).toLowerCase();
+      if (cellText === "from" && j + 1 < row4Raw.length) {
+        fromDateRaw = row4Raw[j + 1];
+      }
+      if (cellText === "to" && j + 1 < row4Raw.length) {
+        toDateRaw = row4Raw[j + 1];
+      }
     }
-
+    
     const fromDate = formatDate(fromDateRaw);
     const toDate = formatDate(toDateRaw);
+    
+    console.log('Date extraction:', { fromDateRaw, toDateRaw, fromDate, toDate });
 
     // Extract closing balance from the statement
     let closingBalance = 0;
