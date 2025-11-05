@@ -52,12 +52,22 @@ const parseAmount = (val) => {
 const formatDate = (val) => {
   if (!val) return "";
   
-  // Handle Excel serial date numbers
   let d;
+  
+  // Handle Excel serial date numbers
   if (typeof val === 'number') {
     // Excel date serial number (days since 1900-01-01)
     d = new Date((val - 25569) * 86400 * 1000);
-  } else {
+  } 
+  // Handle DD-MM-YYYY format strings
+  else if (typeof val === 'string' && val.match(/^\d{2}-\d{2}-\d{4}/)) {
+    const parts = val.split(' ');
+    const dateParts = parts[0].split('-');
+    const timeParts = parts[1] ? parts[1].split(':') : ['00', '00', '00'];
+    // Convert DD-MM-YYYY to YYYY-MM-DD
+    d = new Date(`${dateParts[2]}-${dateParts[1]}-${dateParts[0]}T${timeParts[0]}:${timeParts[1]}:${timeParts[2]}`);
+  } 
+  else {
     d = new Date(val);
   }
   
