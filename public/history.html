@@ -251,9 +251,10 @@
       if (!dateStr) return 'N/A';
       try {
         const date = new Date(dateStr);
-        return date.toLocaleDateString();
+        if (isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
       } catch {
-        return dateStr;
+        return 'N/A';
       }
     }
 
