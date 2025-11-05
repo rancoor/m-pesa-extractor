@@ -39,7 +39,7 @@
   
   <!-- Main Content -->
   <div class="flex items-center justify-center min-h-[calc(100vh-4rem)] py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
+    <div class="max-w-2xl w-full space-y-8">
       <div class="glass rounded-2xl shadow-xl p-8">
         <div class="text-center mb-8">
           <h2 class="text-3xl font-extrabold text-gray-900">M-Pesa Statement Processor</h2>
@@ -108,8 +108,8 @@
           </div>
 
           <!-- Statement Info & Downloads Side by Side -->
-          <div id="resultsContainer" style="display: none;">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div id="resultsContainer" class="hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Statement Info -->
               <div id="statementInfo" class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
                 <h4 class="text-sm font-semibold text-blue-800 mb-2">Statement Information</h4>
@@ -181,7 +181,7 @@
       }
 
       loader.style.display = "block";
-      document.getElementById('resultsContainer').style.display = "none";
+      document.getElementById('resultsContainer').classList.add('hidden');
 
       const formData = new FormData();
       formData.append("file", file);
@@ -218,7 +218,7 @@
           linesLink.download = `M-Pesa-Lines-${dateStr}.xlsx`;
 
           loader.style.display = "none";
-          document.getElementById('resultsContainer').style.display = "block";
+          document.getElementById('resultsContainer').classList.remove('hidden');
         } else {
           throw new Error("Unexpected response format");
         }
