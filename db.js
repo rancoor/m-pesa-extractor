@@ -2,14 +2,15 @@
 const isVercel = process.env.VERCEL === '1';
 
 let db;
+let initialized = false;
 
 if (isVercel) {
   // Use Neon (Postgres) on Vercel
   const { neon } = require('@neondatabase/serverless');
   const sql = neon(process.env.DATABASE_URL);
   
-  db = {
-    async init() {
+  const ensureTable = async () => {
+    if (!initialized) {
       try {
         await sql`
           CREATE TABLE IF NOT EXISTS statements (
@@ -26,14 +27,23 @@ if (isVercel) {
             fileName TEXT
           )
         `;
-        console.log('Connected to Neon database');
+        initialized = true;
+        console.log('Neon database table ready');
       } catch (err) {
         console.error('Database init error:', err);
+        throw err;
       }
+    }
+  };
+  
+  db = {
+    async init() {
+      await ensureTable();
     },
     
     async insert(statementID, bankAccount, currency, openingBalance, closingBalance, fromDate, toDate, processedDate, totalTransactions, fileName) {
       try {
+        await ensureTable();
         await sql`
           INSERT INTO statements (statementID, bankAccount, currency, openingBalance, closingBalance, fromDate, toDate, processedDate, totalTransactions, fileName)
           VALUES (${statementID}, ${bankAccount}, ${currency}, ${openingBalance}, ${closingBalance}, ${fromDate}, ${toDate}, ${processedDate}, ${totalTransactions}, ${fileName})
@@ -46,31 +56,17 @@ if (isVercel) {
     
     async query(fromDate, toDate, statementID) {
       try {
-        let conditions = [];
+        await ensureTable();
+        let rows = await sql`SELECT * FROM statements ORDER BY processedDate DESC`;
         
-        if (fromDate) {
-          conditions.push(sql`DATE(fromDate) >= DATE(${fromDate})`);
-        }
-        if (toDate) {
-          conditions.push(sql`DATE(toDate) <= DATE(${toDate})`);
-        }
-        if (statementID) {
-          conditions.push(sql`statementID = ${statementID}`);
-        }
-        
-        let rows;
-        if (conditions.length > 0) {
-          // Build dynamic query - simplified for now, fetch all and filter
-          rows = await sql`SELECT * FROM statements ORDER BY processedDate DESC`;
-          // Manual filtering for simplicity
+        // Manual filtering
+        if (fromDate || toDate || statementID) {
           rows = rows.filter(row => {
-            if (fromDate && new Date(row.fromDate) < new Date(fromDate)) return false;
-            if (toDate && new Date(row.toDate) > new Date(toDate)) return false;
-            if (statementID && row.statementID != statementID) return false;
+            if (fromDate && new Date(row.fromdate) < new Date(fromDate)) return false;
+            if (toDate && new Date(row.todate) > new Date(toDate)) return false;
+            if (statementID && row.statementid != statementID) return false;
             return true;
           });
-        } else {
-          rows = await sql`SELECT * FROM statements ORDER BY processedDate DESC`;
         }
         
         return rows;
