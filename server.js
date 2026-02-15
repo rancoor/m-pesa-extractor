@@ -224,19 +224,6 @@ app.get("/download/:id/:type", (req, res) => {
   res.send(file);
 });
 
-// History endpoint
-app.get("/api/history", async (req, res) => {
-  const { fromDate, toDate, statementID } = req.query;
-  
-  try {
-    const rows = await db.query(fromDate, toDate, statementID);
-    res.json({ statements: rows });
-  } catch (err) {
-    console.error("Database query error:", err);
-    res.status(500).json({ error: "Database error" });
-  }
-});
-
 // Fallback for /
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
