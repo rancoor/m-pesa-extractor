@@ -2,33 +2,10 @@ const express = require("express");
 const multer = require("multer");
 const XLSX = require("xlsx");
 const path = require("path");
-const sqlite3 = require("sqlite3").verbose();
+const db = require("./db");
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
-
-// Initialize database
-const db = new sqlite3.Database("./mpesa_statements.db", (err) => {
-  if (err) console.error("Database connection error:", err);
-  else console.log("Connected to SQLite database");
-});
-
-// Create statements table
-db.run(`
-  CREATE TABLE IF NOT EXISTS statements (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    statementID INTEGER NOT NULL,
-    bankAccount TEXT NOT NULL,
-    currency TEXT NOT NULL,
-    openingBalance REAL NOT NULL,
-    closingBalance REAL NOT NULL,
-    fromDate TEXT NOT NULL,
-    toDate TEXT NOT NULL,
-    processedDate TEXT NOT NULL,
-    totalTransactions INTEGER NOT NULL,
-    fileName TEXT
-  )
-`);
 
 app.use(express.json());
 
@@ -202,14 +179,11 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     const processedDate = new Date().toISOString();
     const totalTransactions = linesSheetData.length - 1; // Exclude header row
     
-    db.run(
-      `INSERT INTO statements (statementID, bankAccount, currency, openingBalance, closingBalance, fromDate, toDate, processedDate, totalTransactions, fileName) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [statementID, "MPESA", "KES", openingBalance, closingBalance, fromDate, toDate, processedDate, totalTransactions, req.file.originalname],
-      (err) => {
-        if (err) console.error("Database insert error:", err);
-      }
-    );
+    try {
+      await db.insert(statementID, "MPESA", "KES", openingBalance, closingBalance, fromDate, toDate, processedDate, totalTransactions, req.file.originalname);
+    } catch (err) {
+      console.error("Database insert error:", err);
+    }
 
     // Send JSON with download links
     res.json({
@@ -251,34 +225,16 @@ app.get("/download/:id/:type", (req, res) => {
 });
 
 // History endpoint
-app.get("/api/history", (req, res) => {
+app.get("/api/history", async (req, res) => {
   const { fromDate, toDate, statementID } = req.query;
   
-  let query = "SELECT * FROM statements WHERE 1=1";
-  const params = [];
-  
-  if (fromDate) {
-    query += " AND DATE(fromDate) >= DATE(?)";
-    params.push(fromDate);
-  }
-  if (toDate) {
-    query += " AND DATE(toDate) <= DATE(?)";
-    params.push(toDate);
-  }
-  if (statementID) {
-    query += " AND statementID = ?";
-    params.push(statementID);
-  }
-  
-  query += " ORDER BY processedDate DESC";
-  
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      console.error("Database query error:", err);
-      return res.status(500).json({ error: "Database error" });
-    }
+  try {
+    const rows = await db.query(fromDate, toDate, statementID);
     res.json({ statements: rows });
-  });
+  } catch (err) {
+    console.error("Database query error:", err);
+    res.status(500).json({ error: "Database error" });
+  }
 });
 
 // Fallback for /
