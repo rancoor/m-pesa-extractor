@@ -1,10 +1,10 @@
 // Database abstraction layer - works with SQLite locally and Postgres on Vercel
-const isVercel = process.env.VERCEL === '1';
+const isVercel = process.env.VERCEL === '1' || process.env.DATABASE_URL;
 
 let db;
 let initialized = false;
 
-if (isVercel) {
+if (isVercel && process.env.DATABASE_URL) {
   // Use Neon (Postgres) on Vercel
   const { neon } = require('@neondatabase/serverless');
   const sql = neon(process.env.DATABASE_URL);
@@ -76,13 +76,26 @@ if (isVercel) {
       }
     }
   };
-} else {
-  // Use SQLite locally
-  const sqlite3 = require('sqlite3').verbose();
-  const sqliteDb = new sqlite3.Database('./mpesa_statements.db', (err) => {
-    if (err) console.error('Database connection error:', err);
-    else console.log('Connected to SQLite database');
-  });
+} else if (!isVercel) {
+  // Use SQLite locally (not on Vercel)
+  let sqlite3, sqliteDb;
+  try {
+    sqlite3 = require('sqlite3').verbose();
+    sqliteDb = new sqlite3.Database('./mpesa_statements.db', (err) => {
+      if (err) console.error('Database connection error:', err);
+      else console.log('Connected to SQLite database');
+    });
+  } catch (err) {
+    console.error('SQLite not available:', err);
+    // Fallback to in-memory only mode if SQLite fails
+    db = {
+      async init() { console.log('Running without database (in-memory only)'); },
+      async insert() { console.log('Database insert skipped (no DB available)'); },
+      async query() { return []; }
+    };
+    module.exports = db;
+    return;
+  }
   
   db = {
     async init() {
@@ -156,6 +169,14 @@ if (isVercel) {
         });
       });
     }
+  };
+} else {
+  // Vercel without DATABASE_URL - run without database
+  console.warn('Running on Vercel without DATABASE_URL - database features disabled');
+  db = {
+    async init() { console.log('No database configured'); },
+    async insert() { console.log('Database insert skipped (no DB configured)'); },
+    async query() { return []; }
   };
 }
 
